@@ -2,14 +2,16 @@ use std::f64::consts::PI;
 use std::fs::File;
 use std::io::prelude::*;
 
-const SAMPLE_RATE: u16 = 44110;
+const SAMPLE_RATE: u32 = 44110;
 
 fn main() -> std::io::Result<()> {
-    let mut file = File::create("sine.pcm")?;
+    let mut file = File::create("sine.wav")?;
 
-    let buf = make_sin(3, 1000.0);
+    let sin_buf = make_sin(3, 1000.0);
+    let wav_buf = make_wav(sin_buf.len());
 
-    file.write_all(&buf)?;
+    file.write_all(&wav_buf)?;
+    file.write_all(&sin_buf)?;
 
     Ok(())
 }
@@ -24,6 +26,20 @@ fn make_sin(seconds: u64, frequency: f64) -> Vec<u8> {
         buf.push(s)
     }
 
+    buf
+
+}
+
+fn make_wav(samples: usize) -> Vec<u8> {
+    let mut buf = Vec::new();
+    buf.extend(b"RIFF");
+    buf.extend(u32::to_be_bytes(20 + samples as u32)); //WAV Chunk size
+    buf.extend(b"WAVE");
+    buf.extend(b"fmt ");
+    buf.extend(u32::to_be_bytes(16)); // fmt chunk size
+    buf.extend(u16::to_be_bytes(1)); // format code (PCM)
+    buf.extend(u16::to_be_bytes(1));
+    
     buf
 
 }
