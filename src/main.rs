@@ -1,7 +1,8 @@
+use bincode::{Encode, config};
+use core::num;
 use std::f64::consts::PI;
 use std::fs::File;
 use std::io::prelude::*;
-use bincode::{config, Encode};
 
 const SAMPLE_RATE: u32 = 44100;
 
@@ -9,11 +10,15 @@ fn main() -> std::io::Result<()> {
     let mut file = File::create("sine.wav")?;
 
     let sin_buf = make_sin(3, 440.0);
-    let wav_buf = make_wav(sin_buf.len(), sin_buf);
-    
+
+    let riff_chunk = RiffChunk::new(sin_buf.len());
+    let fmt_chunk = FmtChunk::new();
+    let data_chunk = DataChunk::new(sin_buf, fmt_chunk.num_of_channels, fmt_chunk.bits_per_sample);
+
     let config = config::standard().with_fixed_int_encoding();
-    bincode::encode_into_std_write(wav_buf.0, &mut file, config).unwrap();
-    bincode::encode_into_std_write(wav_buf.1, &mut file, config).unwrap();
+    bincode::encode_into_std_write(riff_chunk, &mut file, config).unwrap();
+    bincode::encode_into_std_write(fmt_chunk, &mut file, config).unwrap();
+    bincode::encode_into_std_write(data_chunk, &mut file, config).unwrap();
 
     Ok(())
 }
@@ -31,48 +36,30 @@ fn make_sin(seconds: u64, frequency: f64) -> Vec<u8> {
     buf
 }
 
-fn make_wav(samples: usize, data: Vec<u8>) -> (WavHeader, DataChunk) {
-    let chunk_id = *b"RIFF";
-    let chunk_size = 20 + samples as u32;
-    let format = b"WAVE";
-    let subchunk_1_id = b"fmt ";
-    let subchunk_1_size: u32 = 16;
-    let audio_format = 1;
-    let num_of_channels = 1;
-    let bits_per_sample: u16 = 8;
-    let byte_rate = SAMPLE_RATE * num_of_channels as u32 * (bits_per_sample / 8) as u32;
-    let block_align = num_of_channels as u16 * (bits_per_sample / 8) as u16;
-
-    let header = WavHeader {
-        chunk_id: chunk_id,
-        chunk_size: chunk_size,
-        format: *format,
-        subchunk_1_id: *subchunk_1_id,
-        subchunk_1_size: subchunk_1_size,
-        audio_format: audio_format,
-        num_of_channels: num_of_channels,
-        sample_rate: SAMPLE_RATE,
-        byte_rate: byte_rate,
-        block_align: block_align,
-        bits_per_sample: bits_per_sample,
-    };
-
-    let subchunk_2_size = samples as u32 * num_of_channels as u32 * (bits_per_sample / 8) as u32;
-    let data = DataChunk {
-        subchunk_2_id: *b"data",
-        subchunk_2_size: subchunk_2_size,
-        data: data
-    };
-
-    (header, data)
-
-}
-
 #[derive(Encode)]
-struct WavHeader {
+struct RiffChunk {
     chunk_id: [u8; 4],
     chunk_size: u32,
     format: [u8; 4],
+}
+
+impl RiffChunk {
+    fn new(samples: usize) -> RiffChunk {
+        let chunk_id = *b"RIFF";
+        let chunk_size = 20 + samples as u32;
+        let format = b"WAVE";
+    
+        RiffChunk {
+            chunk_id: chunk_id,
+            chunk_size: chunk_size,
+            format: *format,
+        }
+    }
+}
+
+
+#[derive(Encode)]
+struct FmtChunk {
     subchunk_1_id: [u8; 4],
     subchunk_1_size: u32,
     audio_format: u16,
@@ -83,9 +70,44 @@ struct WavHeader {
     bits_per_sample: u16,
 }
 
+impl FmtChunk {
+    fn new() -> FmtChunk {
+        let subchunk_1_id = b"fmt ";
+        let subchunk_1_size: u32 = 16;
+        let audio_format = 1;
+        let num_of_channels = 1;
+        let bits_per_sample: u16 = 8;
+        let byte_rate = SAMPLE_RATE * num_of_channels as u32 * (bits_per_sample / 8) as u32;
+        let block_align = num_of_channels as u16 * (bits_per_sample / 8) as u16;
+    
+        FmtChunk {
+            subchunk_1_id: *subchunk_1_id,
+            subchunk_1_size: subchunk_1_size,
+            audio_format: audio_format,
+            num_of_channels: num_of_channels,
+            sample_rate: SAMPLE_RATE,
+            byte_rate: byte_rate,
+            block_align: block_align,
+            bits_per_sample: bits_per_sample,
+        }
+    }
+}
+
 #[derive(Encode)]
 struct DataChunk {
     subchunk_2_id: [u8; 4],
     subchunk_2_size: u32,
-    data: Vec<u8>
+    data: Vec<u8>,
+}
+
+impl DataChunk {
+    fn new(data: Vec<u8>, num_of_channels: u16, bits_per_sample: u16) -> DataChunk {
+        let subchunk_2_size = data.len() as u32 * num_of_channels as u32 * (bits_per_sample / 8) as u32;
+    
+        DataChunk {
+            subchunk_2_id: *b"data",
+            subchunk_2_size: subchunk_2_size,
+            data: data,
+        }
+    }
 }
