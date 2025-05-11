@@ -1,17 +1,19 @@
 use std::f64::consts::PI;
 use std::fs::File;
 use std::io::prelude::*;
+use bincode::{config, Encode};
 
-const SAMPLE_RATE: u32 = 44110;
+const SAMPLE_RATE: u32 = 44100;
 
 fn main() -> std::io::Result<()> {
     let mut file = File::create("sine.wav")?;
 
-    let sin_buf = make_sin(3, 1000.0);
-    let wav_buf = make_wav(sin_buf.len());
-
-    file.write_all(&wav_buf)?;
-    file.write_all(&sin_buf)?;
+    let sin_buf = make_sin(3, 440.0);
+    let wav_buf = make_wav(sin_buf.len(), sin_buf);
+    
+    let config = config::standard().with_fixed_int_encoding();
+    bincode::encode_into_std_write(wav_buf.0, &mut file, config).unwrap();
+    bincode::encode_into_std_write(wav_buf.1, &mut file, config).unwrap();
 
     Ok(())
 }
@@ -29,28 +31,61 @@ fn make_sin(seconds: u64, frequency: f64) -> Vec<u8> {
     buf
 }
 
-fn make_wav(samples: usize) -> Vec<u8> {
-    let mut buf = Vec::new();
+fn make_wav(samples: usize, data: Vec<u8>) -> (WavHeader, DataChunk) {
+    let chunk_id = *b"RIFF";
+    let chunk_size = 20 + samples as u32;
+    let format = b"WAVE";
+    let subchunk_1_id = b"fmt ";
+    let subchunk_1_size: u32 = 16;
+    let audio_format = 1;
+    let num_of_channels = 1;
+    let bits_per_sample: u16 = 8;
+    let byte_rate = SAMPLE_RATE * num_of_channels as u32 * (bits_per_sample / 8) as u32;
+    let block_align = num_of_channels as u16 * (bits_per_sample / 8) as u16;
 
-    buf.extend(b"RIFF");
-    buf.extend(u32::to_le_bytes(20 + samples as u32)); // WAVE chunk size
+    let header = WavHeader {
+        chunk_id: chunk_id,
+        chunk_size: chunk_size,
+        format: *format,
+        subchunk_1_id: *subchunk_1_id,
+        subchunk_1_size: subchunk_1_size,
+        audio_format: audio_format,
+        num_of_channels: num_of_channels,
+        sample_rate: SAMPLE_RATE,
+        byte_rate: byte_rate,
+        block_align: block_align,
+        bits_per_sample: bits_per_sample,
+    };
 
-    buf.extend(b"WAVE"); // WAVE Chunk
-    
-    // fmt Chunk
-    buf.extend(b"fmt ");
-    buf.extend(u32::to_le_bytes(16)); // fmt chunk size
-    buf.extend(u16::to_le_bytes(1)); // format code (PCM)
-    buf.extend(u16::to_le_bytes(1)); // number of channels
-    buf.extend(u32::to_le_bytes(SAMPLE_RATE));
-    buf.extend(u32::to_le_bytes(SAMPLE_RATE)); // data rate
-    buf.extend(u16::to_le_bytes(1)); // data block size
-    buf.extend(u16::to_le_bytes(8)); // bits per  sample
+    let subchunk_2_size = samples as u32 * num_of_channels as u32 * (bits_per_sample / 8) as u32;
+    let data = DataChunk {
+        subchunk_2_id: *b"data",
+        subchunk_2_size: subchunk_2_size,
+        data: data
+    };
 
-    //  data chunk
-    buf.extend(b"data");
-    buf.extend(u32::to_le_bytes(samples as u32)); // data chunk size
-    
-    buf
+    (header, data)
 
+}
+
+#[derive(Encode)]
+struct WavHeader {
+    chunk_id: [u8; 4],
+    chunk_size: u32,
+    format: [u8; 4],
+    subchunk_1_id: [u8; 4],
+    subchunk_1_size: u32,
+    audio_format: u16,
+    num_of_channels: u16,
+    sample_rate: u32,
+    byte_rate: u32,
+    block_align: u16,
+    bits_per_sample: u16,
+}
+
+#[derive(Encode)]
+struct DataChunk {
+    subchunk_2_id: [u8; 4],
+    subchunk_2_size: u32,
+    data: Vec<u8>
 }
