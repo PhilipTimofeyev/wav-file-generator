@@ -1,10 +1,11 @@
 use bincode::{Encode, config};
 use std::f64::consts::PI;
 use std::fs::File;
+// extern crate bincode;
 
 const SAMPLE_RATE: u32 = 44100;
 
-fn run() -> std::io::Result<()> {
+fn main() -> std::io::Result<()> {
     let mut file = File::create("sine.wav")?;
 
     let sin_buf = make_sin(3, 440.0);
