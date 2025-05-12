@@ -4,7 +4,7 @@ use std::fs::File;
 
 const SAMPLE_RATE: u32 = 44100;
 
-fn main() -> std::io::Result<()> {
+fn run() -> std::io::Result<()> {
     let mut file = File::create("sine.wav")?;
 
     let sin_buf = make_sin(3, 440.0);
