@@ -2,19 +2,12 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>WAV Gen</title>
+    <title>Sine Gen</title>
     <style>
       body {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
-        /* font-size: 24px; */
       }
       .input-container {
         display: flex;
@@ -45,7 +38,7 @@
 
     <script type="module">
         import init, { make_sin, create_wav } from "./pkg/wav_file_generator.js";
-        await init();
+        const wasm = await init();
         
         const downloadBtn = document.getElementById('download')
         
