@@ -18,21 +18,35 @@
     </style>
   </head>
   <body>
-    <h1>Working?</h1>
+    <h1>Sine Wav File Generator</h1>
+    <div> 
+        <div>
+            <label>Length (Seconds)</label>
+            <input id='length'> </input>
+
+        </div>
+        <div>
+            <label>Frequency</label>
+            <input id="frequency"></input>
+        </div>
+    </div>
     <button id="download"> Download Wave</button>
+
     <script type="module">
         import init, { make_sin, create_wav } from "./pkg/wav_file_generator.js";
         await init();
-        console.log(create_wav())
-        const u8Array = new Uint8Array(create_wav())
-
+        
         const downloadBtn = document.getElementById('download')
+        
         downloadBtn.addEventListener('click', function() {
-            downloadUint8Array(u8Array)
+            downloadUint8Array()
         })
-
-        function downloadUint8Array(uint8Array) {
-            const blob = new Blob([uint8Array], { type: 'application/octet-stream' });
+        
+        function downloadUint8Array() {
+            const length = document.getElementById('length').value
+            const frequency = document.getElementById('frequency').value
+            const u8Array = new Uint8Array(create_wav(BigInt(length), parseFloat(frequency)))
+            const blob = new Blob([u8Array], { type: 'application/octet-stream' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
             link.download = 'sin.wav';
@@ -40,11 +54,8 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            URL.revokeObjectURL(link.href); // Cleanup after the download
+            URL.revokeObjectURL(link.href);
         }        
-
-        // downloadUint8Array(u8Array, 'sin.wav');
-        // console.log(u8Array)
     </script>
   </body>
 </html>

@@ -8,12 +8,12 @@ use wasm_bindgen::prelude::*;
 const SAMPLE_RATE: u32 = 44100;
 
 #[wasm_bindgen]
-pub fn create_wav() -> Vec<u8> {
+pub fn create_wav(seconds: u64, freq: f64, ) -> Vec<u8> {
     // let mut file = File::create("sine.wav").unwrap();
     let mut file: Vec<u8> = Vec::new();
     // let mut file = [0u8; 100];
 
-    let sin_buf = make_sin(3, 440.0);
+    let sin_buf = make_sin(seconds, freq);
     
     let riff_chunk = RiffChunk::new(sin_buf.len());
     let fmt_chunk = FmtChunk::new();
@@ -33,18 +33,7 @@ pub fn create_wav() -> Vec<u8> {
     file.append(&mut fmt_bytes);
     file.append(&mut data_bytes);
     file
-    // vec![1, 2, 3]
-    // 3
-    // Ok((file))
-    // file
 }
-
-// fn encoder(riff_chunk: RiffChunk, mut file: Vec<u8>) -> Vec<u8> {
-//     let config: config::Configuration<config::LittleEndian, config::Fixint> = config::standard().with_fixed_int_encoding();
-//     bincode::encode_into_slice(riff_chunk, &mut file, config);
-
-//     file
-// }
 
 #[wasm_bindgen]
 pub fn make_sin(seconds: u64, frequency: f64) -> Vec<u8> {
