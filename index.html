@@ -14,23 +14,34 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
+        /* font-size: 24px; */
+      }
+      .input-container {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .input-div {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
       }
     </style>
   </head>
   <body>
     <h1>Sine Wav File Generator</h1>
-    <div> 
-        <div>
+    <div class="input-container"> 
+        <div class="input-div">
             <label>Length (Seconds)</label>
             <input id='length'> </input>
 
         </div>
-        <div>
-            <label>Frequency</label>
+        <div class="input-div">
+            <label>Frequency (Hz)</label>
             <input id="frequency"></input>
         </div>
+        <button id="download"> Generate</button>
     </div>
-    <button id="download"> Download Wave</button>
 
     <script type="module">
         import init, { make_sin, create_wav } from "./pkg/wav_file_generator.js";
@@ -43,8 +54,10 @@
         })
         
         function downloadUint8Array() {
-            const length = document.getElementById('length').value
+            const length = parseInt(document.getElementById('length').value)
             const frequency = document.getElementById('frequency').value
+            if (!validateLength(length)) return
+            if (!validateFrequency(frequency)) return
             const u8Array = new Uint8Array(create_wav(BigInt(length), parseFloat(frequency)))
             const blob = new Blob([u8Array], { type: 'application/octet-stream' });
             const link = document.createElement('a');
@@ -55,6 +68,19 @@
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(link.href);
+        }     
+        
+        function validateLength(length) {
+            if (!length || length <= 0 || length > 300) {
+                alert("Please enter a length between 1 and 300 seconds") 
+            } else return true
+        }
+
+        function validateFrequency(frequency) {
+            if (!frequency ||  frequency <= 0 || frequency >= 24000){
+                alert("Please enter a frequency between 1 and 24,000 Hz")
+                return false
+            } else return true
         }        
     </script>
   </body>
