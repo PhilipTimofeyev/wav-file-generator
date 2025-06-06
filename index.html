@@ -19,25 +19,31 @@
   </head>
   <body>
     <h1>Working?</h1>
+    <button id="download"> Download Wave</button>
     <script type="module">
         import init, { make_sin, create_wav } from "./pkg/wav_file_generator.js";
         await init();
         console.log(create_wav())
         const u8Array = new Uint8Array(create_wav())
 
-function downloadUint8Array(uint8Array, filename) {
-  const blob = new Blob([uint8Array], { type: 'application/octet-stream' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = filename;
-  link.style.display = 'none';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(link.href); // Cleanup after the download
-}        
+        const downloadBtn = document.getElementById('download')
+        downloadBtn.addEventListener('click', function() {
+            downloadUint8Array(u8Array)
+        })
 
-downloadUint8Array(u8Array, 'sin.wav');
+        function downloadUint8Array(uint8Array) {
+            const blob = new Blob([uint8Array], { type: 'application/octet-stream' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'sin.wav';
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href); // Cleanup after the download
+        }        
+
+        // downloadUint8Array(u8Array, 'sin.wav');
         // console.log(u8Array)
     </script>
   </body>
