@@ -1,17 +1,13 @@
 use bincode::{Encode, config};
 use std::f64::consts::PI;
-// use std::fs::File;
-// use serde::{Serialize, Deserialize};
+use std::fs::File;
 use wasm_bindgen::prelude::*;
-// extern crate bincode;
 
 const SAMPLE_RATE: u32 = 44100;
 
 #[wasm_bindgen]
 pub fn create_wav(seconds: u64, freq: f64, ) -> Vec<u8> {
-    // let mut file = File::create("sine.wav").unwrap();
-    let mut file: Vec<u8> = Vec::new();
-    // let mut file = [0u8; 100];
+    let mut file_buffer: Vec<u8> = Vec::new();
 
     let sin_buf = make_sin(seconds, freq);
     
@@ -23,16 +19,13 @@ pub fn create_wav(seconds: u64, freq: f64, ) -> Vec<u8> {
         fmt_chunk.bits_per_sample,
     );
     
-    // let encoded: Vec<u8> = bincode::serialize(&my_struct).unwrap();
-    // let a = encoder(riff_chunk, file);
     let config: config::Configuration<config::LittleEndian, config::Fixint> = config::standard().with_fixed_int_encoding();
-    let mut riff_bytes = bincode::encode_to_vec(riff_chunk, config).unwrap();
-    let mut fmt_bytes = bincode::encode_to_vec(fmt_chunk, config).unwrap();
-    let mut data_bytes = bincode::encode_to_vec(data_chunk, config).unwrap();
-    file.append(&mut riff_bytes);
-    file.append(&mut fmt_bytes);
-    file.append(&mut data_bytes);
-    file
+
+    bincode::encode_into_std_write(riff_chunk, &mut file_buffer, config).unwrap();
+    bincode::encode_into_std_write(fmt_chunk,  &mut file_buffer, config).unwrap();
+    bincode::encode_into_std_write(data_chunk,  &mut file_buffer, config).unwrap();
+
+    file_buffer
 }
 
 #[wasm_bindgen]
