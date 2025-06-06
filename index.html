@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>WAV Gen</title>
+    <style>
+      body {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Working?</h1>
+    <script type="module">
+        import init, { make_sin, create_wav } from "./pkg/wav_file_generator.js";
+        await init();
+        console.log(create_wav())
+        const u8Array = new Uint8Array(create_wav())
+
+function downloadUint8Array(uint8Array, filename) {
+  const blob = new Blob([uint8Array], { type: 'application/octet-stream' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(link.href); // Cleanup after the download
+}        
+
+downloadUint8Array(u8Array, 'sin.wav');
+        // console.log(u8Array)
+    </script>
+  </body>
+</html>

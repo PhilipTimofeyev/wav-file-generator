@@ -1,15 +1,20 @@
 use bincode::{Encode, config};
 use std::f64::consts::PI;
-use std::fs::File;
+// use std::fs::File;
+// use serde::{Serialize, Deserialize};
+use wasm_bindgen::prelude::*;
 // extern crate bincode;
 
 const SAMPLE_RATE: u32 = 44100;
 
-fn main() -> std::io::Result<()> {
-    let mut file = File::create("sine.wav")?;
+#[wasm_bindgen]
+pub fn create_wav() -> Vec<u8> {
+    // let mut file = File::create("sine.wav").unwrap();
+    let mut file: Vec<u8> = Vec::new();
+    // let mut file = [0u8; 100];
 
     let sin_buf = make_sin(3, 440.0);
-
+    
     let riff_chunk = RiffChunk::new(sin_buf.len());
     let fmt_chunk = FmtChunk::new();
     let data_chunk = DataChunk::new(
@@ -17,16 +22,32 @@ fn main() -> std::io::Result<()> {
         fmt_chunk.num_of_channels,
         fmt_chunk.bits_per_sample,
     );
-
-    let config = config::standard().with_fixed_int_encoding();
-    bincode::encode_into_std_write(riff_chunk, &mut file, config).unwrap();
-    bincode::encode_into_std_write(fmt_chunk, &mut file, config).unwrap();
-    bincode::encode_into_std_write(data_chunk, &mut file, config).unwrap();
-
-    Ok(())
+    
+    // let encoded: Vec<u8> = bincode::serialize(&my_struct).unwrap();
+    // let a = encoder(riff_chunk, file);
+    let config: config::Configuration<config::LittleEndian, config::Fixint> = config::standard().with_fixed_int_encoding();
+    let mut riff_bytes = bincode::encode_to_vec(riff_chunk, config).unwrap();
+    let mut fmt_bytes = bincode::encode_to_vec(fmt_chunk, config).unwrap();
+    let mut data_bytes = bincode::encode_to_vec(data_chunk, config).unwrap();
+    file.append(&mut riff_bytes);
+    file.append(&mut fmt_bytes);
+    file.append(&mut data_bytes);
+    file
+    // vec![1, 2, 3]
+    // 3
+    // Ok((file))
+    // file
 }
 
-fn make_sin(seconds: u64, frequency: f64) -> Vec<u8> {
+// fn encoder(riff_chunk: RiffChunk, mut file: Vec<u8>) -> Vec<u8> {
+//     let config: config::Configuration<config::LittleEndian, config::Fixint> = config::standard().with_fixed_int_encoding();
+//     bincode::encode_into_slice(riff_chunk, &mut file, config);
+
+//     file
+// }
+
+#[wasm_bindgen]
+pub fn make_sin(seconds: u64, frequency: f64) -> Vec<u8> {
     let samples = seconds as usize * SAMPLE_RATE as usize;
     let mut buf = Vec::with_capacity(samples);
 
