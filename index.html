@@ -27,54 +27,14 @@
         <div class="input-div">
             <label>Length (Seconds)</label>
             <input id='length'> </input>
-
         </div>
         <div class="input-div">
             <label>Frequency (Hz)</label>
             <input id="frequency"></input>
         </div>
-        <button id="download"> Generate</button>
+        <button id="generate"> Generate</button>
     </div>
 
-    <script type="module">
-        import init, { make_sin, create_wav } from "./pkg/wav_file_generator.js";
-        const wasm = await init();
-        
-        const downloadBtn = document.getElementById('download')
-        
-        downloadBtn.addEventListener('click', function() {
-            downloadUint8Array()
-        })
-        
-        function downloadUint8Array() {
-            const length = parseInt(document.getElementById('length').value)
-            const frequency = document.getElementById('frequency').value
-            if (!validateLength(length)) return
-            if (!validateFrequency(frequency)) return
-            const u8Array = new Uint8Array(create_wav(BigInt(length), parseFloat(frequency)))
-            const blob = new Blob([u8Array], { type: 'application/octet-stream' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'sin.wav';
-            link.style.display = 'none';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(link.href);
-        }     
-        
-        function validateLength(length) {
-            if (!length || length <= 0 || length > 300) {
-                alert("Please enter a length between 1 and 300 seconds") 
-            } else return true
-        }
-
-        function validateFrequency(frequency) {
-            if (!frequency ||  frequency <= 0 || frequency >= 24000){
-                alert("Please enter a frequency between 1 and 24,000 Hz")
-                return false
-            } else return true
-        }        
-    </script>
+    <script src="script.js" type="module"></script>
   </body>
 </html>
