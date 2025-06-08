@@ -1,6 +1,5 @@
 use bincode::{Encode, config};
 use std::f64::consts::PI;
-use std::fs::File;
 use wasm_bindgen::prelude::*;
 
 const SAMPLE_RATE: u32 = 44100;
@@ -28,14 +27,26 @@ pub fn build_wav(seconds: u64, freq: f64, ) -> Vec<u8> {
     file_buffer
 }
 
-#[wasm_bindgen]
 pub fn make_sin(seconds: u64, frequency: f64) -> Vec<u8> {
     let samples = seconds as usize * SAMPLE_RATE as usize;
     let mut buf = Vec::with_capacity(samples);
 
     for t in 0..samples {
         let s = f64::sin((2.0 * PI * frequency * t as f64) / (SAMPLE_RATE as f64));
-        let s = f64::floor(255.0 * (0.5 * s + 0.5)) as u8;
+        let s = f64::floor(127.5 * (s + 1.0)) as u8;
+        buf.push(s)
+    }
+
+    buf
+}
+
+pub fn make_square(seconds: u64, frequency: f64) -> Vec<u8> {
+    let samples = seconds as usize * SAMPLE_RATE as usize;
+    let mut buf = Vec::with_capacity(samples);
+
+    for t in 0..samples {
+        let s = (2.0 * PI * frequency * t as f64) / (SAMPLE_RATE as f64);
+        let s = f64::floor(127.5 * (s + 1.0)) as u8;
         buf.push(s)
     }
 

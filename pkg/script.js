@@ -1,4 +1,4 @@
-import init, { build_wav } from "./pkg/wav_file_generator.js";
+import init, { build_wav } from "./wav_file_generator.js";
 await init();  
 
 const generateBtn = document.getElementById('generate')
