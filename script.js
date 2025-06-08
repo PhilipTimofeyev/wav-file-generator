@@ -40,8 +40,8 @@ function validateLength(length) {
 }
 
 function validateFrequency(frequency) {
-    if (!frequency ||  frequency <= 0 || frequency >= 24000){
-        alert("Please enter a frequency between 1 and 24,000 Hz")
+    if (!frequency ||  frequency <= 0 || frequency >= 22050){
+        alert("Please enter a frequency between 1 and 22,050 Hz")
         return false
     } else return true
 }        
