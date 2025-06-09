@@ -1,6 +1,9 @@
-use bincode::{Encode, config};
-use std::f64::consts::PI;
 use wasm_bindgen::prelude::*;
+use bincode::config;
+
+mod sine;
+mod wav;
+use wav::{RiffChunk, FmtChunk, DataChunk};
 
 const SAMPLE_RATE: u32 = 44100;
 
@@ -8,12 +11,12 @@ const SAMPLE_RATE: u32 = 44100;
 pub fn build_wav(seconds: u64, freq: f64, ) -> Vec<u8> {
     let mut file_buffer: Vec<u8> = Vec::new();
 
-    let sin_buf = make_sin(seconds, freq);
+    let sin_data = sine::create_sin(seconds, freq, SAMPLE_RATE);
     
-    let riff_chunk = RiffChunk::new(sin_buf.len());
-    let fmt_chunk = FmtChunk::new();
+    let riff_chunk = RiffChunk::new(sin_data.len());
+    let fmt_chunk = FmtChunk::new(SAMPLE_RATE);
     let data_chunk = DataChunk::new(
-        sin_buf,
+        sin_data,
         fmt_chunk.num_of_channels,
         fmt_chunk.bits_per_sample,
     );
@@ -27,104 +30,3 @@ pub fn build_wav(seconds: u64, freq: f64, ) -> Vec<u8> {
     file_buffer
 }
 
-pub fn make_sin(seconds: u64, frequency: f64) -> Vec<u8> {
-    let samples = seconds as usize * SAMPLE_RATE as usize;
-    let mut buf = Vec::with_capacity(samples);
-
-    for t in 0..samples {
-        let s = f64::sin((2.0 * PI * frequency * t as f64) / (SAMPLE_RATE as f64));
-        let s = f64::floor(127.5 * (s + 1.0)) as u8;
-        buf.push(s)
-    }
-
-    buf
-}
-
-pub fn make_square(seconds: u64, frequency: f64) -> Vec<u8> {
-    let samples = seconds as usize * SAMPLE_RATE as usize;
-    let mut buf = Vec::with_capacity(samples);
-
-    for t in 0..samples {
-        let s = (2.0 * PI * frequency * t as f64) / (SAMPLE_RATE as f64);
-        let s = f64::floor(127.5 * (s + 1.0)) as u8;
-        buf.push(s)
-    }
-
-    buf
-}
-
-#[derive(Encode)]
-struct RiffChunk {
-    chunk_id: [u8; 4],
-    chunk_size: u32,
-    format: [u8; 4],
-}
-
-impl RiffChunk {
-    fn new(samples: usize) -> RiffChunk {
-        let chunk_id = *b"RIFF";
-        let chunk_size = 20 + samples as u32;
-        let format = *b"WAVE";
-
-        RiffChunk {
-            chunk_id,
-            chunk_size,
-            format,
-        }
-    }
-}
-
-#[derive(Encode)]
-struct FmtChunk {
-    subchunk_1_id: [u8; 4],
-    subchunk_1_size: u32,
-    audio_format: u16,
-    num_of_channels: u16,
-    sample_rate: u32,
-    byte_rate: u32,
-    block_align: u16,
-    bits_per_sample: u16,
-}
-
-impl FmtChunk {
-    fn new() -> FmtChunk {
-        let subchunk_1_id = *b"fmt ";
-        let subchunk_1_size: u32 = 16;
-        let audio_format = 1;
-        let num_of_channels = 1;
-        let bits_per_sample: u16 = 8;
-        let byte_rate = SAMPLE_RATE * num_of_channels as u32 * (bits_per_sample / 8) as u32;
-        let block_align = num_of_channels * (bits_per_sample / 8);
-
-        FmtChunk {
-            subchunk_1_id,
-            subchunk_1_size,
-            audio_format,
-            num_of_channels,
-            sample_rate: SAMPLE_RATE,
-            byte_rate,
-            block_align,
-            bits_per_sample,
-        }
-    }
-}
-
-#[derive(Encode)]
-struct DataChunk {
-    subchunk_2_id: [u8; 4],
-    subchunk_2_size: u32,
-    data: Vec<u8>,
-}
-
-impl DataChunk {
-    fn new(data: Vec<u8>, num_of_channels: u16, bits_per_sample: u16) -> DataChunk {
-        let subchunk_2_size =
-            data.len() as u32 * num_of_channels as u32 * (bits_per_sample / 8) as u32;
-
-        DataChunk {
-            subchunk_2_id: *b"data",
-            subchunk_2_size,
-            data,
-        }
-    }
-}
